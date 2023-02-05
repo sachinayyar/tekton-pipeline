@@ -12,7 +12,7 @@ spec:
   params:
     - name: image-name
       description: The fully qualified image name 
-      default: 'image-registry.openshift-image-registry.svc:5000/apipes/tekton-spring-boot'
+      default: 'quay.io/sachinayyar/tekton-pipe'
     # - name: kn-service-name
     #   description: The Knative Service name
     #   default: myservice
@@ -20,7 +20,7 @@ spec:
       type: string
     - name: github-repo-url
       description: The GitHub Repo of the Java Application
-      default: https://github.com/burrsutter/tekton-spring-boot
+      default: https://github.com/sachinayyar/tekton-spring-boot
     - name: github-repo-revision
       description: The GitHub revision to use
       default: master
