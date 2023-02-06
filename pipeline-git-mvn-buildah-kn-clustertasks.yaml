@@ -9,10 +9,13 @@ metadata:
 spec:
   description: >-
     The Pipline to build and deploy the Java App as Knative Service.
+    
+    # PARAMETERS
+    
   params:
     - name: image-name
       description: The fully qualified image name 
-      default: 'quay.io/sachinayyar/tekton-pipe'
+      default: 'quay.io/sachinayyar/tekton-serverless'
     # - name: kn-service-name
     #   description: The Knative Service name
     #   default: myservice
@@ -27,6 +30,9 @@ spec:
   workspaces:
     - name: source
     - name: maven-settings 
+    
+    # TASK 01 GIT-CLONE
+    
   tasks:
     - name: git-clone
       taskRef:
@@ -42,6 +48,9 @@ spec:
       workspaces:
         - name: output
           workspace: source
+          
+          # TASK 02 MAVEN TEST
+          
     - name: mvn-test
       taskRef:
         name: maven
@@ -56,6 +65,9 @@ spec:
           workspace: maven-settings
         - name: source
           workspace: source
+          
+          # TASK 03 MAVEN-PACKAGE
+          
     - name: mvn-package
       taskRef:
         name: maven
@@ -70,6 +82,10 @@ spec:
           workspace: maven-settings
         - name: source
           workspace: source
+          
+          # TASK 04 BUILDING IMAGE USING BUILDAH CLUSTER TASK
+          
+          
     - name: buildah-image
       taskRef:
         name: buildah
@@ -84,6 +100,11 @@ spec:
       workspaces:
         - name: source
           workspace: source
+          
+          
+          #TASK 05 DEPLOYING IMAGE USING KN CLUSTER TASK
+          
+          
     - name: deploy-kn-service
       taskRef:
         name: kn
