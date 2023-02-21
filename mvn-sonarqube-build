@@ -1,0 +1,94 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: build-and-deploy
+  namespace: cicd-tutorial
+spec:
+  params:
+    - default: quay.io/sachinayyar/tekton-pipe
+      description: The fully qualified image name e.g example.com/tekton-tutorial/greeter
+      name: IMAGE_NAME
+      type: string
+    - default: https://github.com/sachinayyar/tekton-spring-boot.git
+      description: The GitHub Repo of the Java Application
+      name: GITHUB_REPO_URL
+      type: string
+    - default: master
+      description: The GitHub revision to use
+      name: GITHUB_REPO_REVISION
+      type: string
+  tasks:
+  
+  # TASK 01 CLONE
+  
+    - name: clone-sources
+      params:
+        - name: url
+          value: $(params.GITHUB_REPO_URL)
+        - name: revision
+          value: $(params.GITHUB_REPO_REVISION)
+        - name: deleteExisting
+          value: 'true'
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: pvc
+          
+         # TASK 02 SONAR MAVEN
+         
+    - name: sonar-maven
+      params:
+        - name: GOALS
+          value:
+            - 'sonar:sonar'
+      runAfter:
+        - clone-sources
+      taskRef:
+        kind: ClusterTask
+        name: maven
+      workspaces:
+        - name: source
+          workspace: pvc
+        - name: maven-settings
+          workspace: pvc
+          
+          # TASK 03 MAVEN BUILD
+          
+    - name: maven-build
+      params:
+        - name: GOALS
+          value:
+            - 'clean'
+            - 'install'
+            - 'package'
+      runAfter:
+        - sonar-maven
+      taskRef:
+        kind: ClusterTask
+        name: maven
+      workspaces:
+        - name: source
+          workspace: pvc
+        - name: maven-settings
+          workspace: pvc
+          
+           # TASK 04 BUILD IMAGE AND PUSH
+           
+    - name: build-image
+      params:
+        - name: TLSVERIFY
+          value: 'false'
+        - name: IMAGE
+          value: $(params.IMAGE_NAME)
+      runAfter:
+        - maven-build
+      taskRef:
+        kind: ClusterTask
+        name: buildah
+      workspaces:
+        - name: source
+          workspace: pvc
+  workspaces:
+    - name: pvc
